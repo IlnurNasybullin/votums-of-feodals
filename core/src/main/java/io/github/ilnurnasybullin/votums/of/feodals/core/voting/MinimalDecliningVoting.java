@@ -47,11 +47,11 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     private VotingResult realAlternative(List<Lord> kingAlternative) {
-        var currentWinners = currentWinners();
+        Set<Lord> currentWinners = currentWinners();
         var votingResult = new VotingResult()
                 .lordsVoting(lordsVoting);
 
-        var kingFavorite = kingAlternative.get(0);
+        Lord kingFavorite = kingAlternative.get(0);
         if (isEvenSituation()) { // чётная ситуация
             if (currentWinners.isEmpty()) { // множество победителей пусто
                 // поэтому король может выбрать любого - по итогу голосования множество победителей так и останется пустым
@@ -73,7 +73,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
 
             // для победителей находится множество лордов, не являющихся победителей, но при этом имеющие хотя бы
             // с одним-лордом победителем равное кол-во предпочтений.
-            var samePreferencesLords = lordsThatHasDiffPreference(currentWinners, 0);
+            Map<Lord, List<Lord>> samePreferencesLords = lordsThatHasDiffPreference(currentWinners, 0);
             samePreferencesLords.keySet().removeAll(currentWinners);
 
             // если таких лордов нет - то королю может лишь выбрать наиболее предпочтительную для себя кандидатуру из
@@ -102,9 +102,9 @@ public class MinimalDecliningVoting implements VotingAsKing {
             var newAlternative = new ArrayList<>(kingAlternative);
             newAlternative.removeAll(currentWinners);
 
-            var anyLordWithEqualPreferenceOfWinnerLords = samePreferencesLords.entrySet().iterator().next();
-            var anyLordThatWillBeHigher = anyLordWithEqualPreferenceOfWinnerLords.getKey();
-            var winner = anyLordWithEqualPreferenceOfWinnerLords.getValue().get(0);
+            Map.Entry<Lord, List<Lord>> anyLordWithEqualPreferenceOfWinnerLords = samePreferencesLords.entrySet().iterator().next();
+            Lord anyLordThatWillBeHigher = anyLordWithEqualPreferenceOfWinnerLords.getKey();
+            Lord winner = anyLordWithEqualPreferenceOfWinnerLords.getValue().get(0);
             if (anyLordThatWillBeHigher != kingFavorite) {
                 newAlternative.remove(anyLordThatWillBeHigher);
                 newAlternative.add(anyLordThatWillBeHigher);
@@ -131,13 +131,13 @@ public class MinimalDecliningVoting implements VotingAsKing {
         }
 
         // поиск лордов потенциальных победителей (если будут фаворитами короля), за исключением уже существующего победителя
-        var potentialWinners = lordsThatHasMinDiffPreferenceWithAll(-1);
+        List<Lord> potentialWinners = lordsThatHasMinDiffPreferenceWithAll(-1);
         potentialWinners.removeAll(currentWinners);
 
         // если таких лордов нет - то королю лучше оставить свою альтернативу так, как есть. Если текущего победителя нет -
         // то победителем будет фаворит короля - иначе победителем будет текущий лорд-победитель
         if (potentialWinners.isEmpty()) {
-            var winner = currentWinners.isEmpty() ? kingFavorite : currentWinners.iterator().next();
+            Lord winner = currentWinners.isEmpty() ? kingFavorite : currentWinners.iterator().next();
             var kingChoice = winner == kingFavorite ? KingChoice.BEST_FOR_KING : KingChoice.NOT_AFFECTED;
             var winningType = currentWinners.isEmpty() ? WinningType.BY_KING_VOTING : WinningType.FAIR;
 
@@ -162,15 +162,15 @@ public class MinimalDecliningVoting implements VotingAsKing {
 
         // при наличии циклов - необходимо будет выбрать наиболее предпочтительную кандидатуру из цикла (т.к. цикл может
         // быть сформирован только из лордов потенциальных победителей, и в нём не будет фаворита)
-        var potentialWinnersDependencyGraph = dependencyGraph(potentialWinners);
+        DirectedGraph<Lord> potentialWinnersDependencyGraph = dependencyGraph(potentialWinners);
 
         if (potentialWinnersDependencyGraph.hasCycles()) {
-            var cycles = potentialWinnersDependencyGraph.cycles();
+            List<Set<Lord>> cycles = potentialWinnersDependencyGraph.cycles();
             var cycledPotentialWinners = cycles
                     .stream()
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
-            var newKingFavorite = bestBetweenThem(kingAlternative, cycledPotentialWinners);
+            Lord newKingFavorite = bestBetweenThem(kingAlternative, cycledPotentialWinners);
 
             var newAlternative = new ArrayList<>(kingAlternative);
             newAlternative.removeAll(potentialWinners);
@@ -202,8 +202,8 @@ public class MinimalDecliningVoting implements VotingAsKing {
         // множество победителей
         if (currentWinners.isEmpty()) {
             var newAlternative = new ArrayList<Lord>();
-            potentialWinnersDependencyGraph.topologicalOrder()
-                    .forEachRemaining(newAlternative::add);
+            Iterator<Lord> topologicalOrder = potentialWinnersDependencyGraph.topologicalOrder();
+            topologicalOrder.forEachRemaining(newAlternative::add);
             newAlternative.remove(kingFavorite);
             newAlternative.add(0, kingFavorite);
 
@@ -213,7 +213,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
                     .winningType(WinningType.BY_KING_VOTING);
         }
 
-        var newFavorite = bestBetweenThem(kingAlternative, Set.copyOf(potentialWinners));
+        Lord newFavorite = bestBetweenThem(kingAlternative, Set.copyOf(potentialWinners));
         var newAlternative = new ArrayList<>(kingAlternative);
         newAlternative.remove(newFavorite);
         newAlternative.add(0, newFavorite);
