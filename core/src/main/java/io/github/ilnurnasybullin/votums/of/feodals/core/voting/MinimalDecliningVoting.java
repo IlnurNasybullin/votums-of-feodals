@@ -2,8 +2,8 @@ package io.github.ilnurnasybullin.votums.of.feodals.core.voting;
 
 import io.github.ilnurnasybullin.votums.of.feodals.core.lord.DeltaRelationships;
 import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Lord;
-import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Relationships;
 import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Status;
+import io.github.ilnurnasybullin.votums.of.feodals.core.math.CondorcetVote;
 import io.github.ilnurnasybullin.votums.of.feodals.core.math.DirectedGraph;
 
 import java.util.*;
@@ -12,19 +12,13 @@ import java.util.stream.Collectors;
 public class MinimalDecliningVoting implements VotingAsKing {
 
     private List<Lord> lords;
-    private Relationships relationships;
     private DeltaRelationships deltaRelationships;
     private LordsVoting lordsVoting;
+    private CondorcetVote<Lord> condorcetVote;
 
     @Override
     public VotingAsKing lords(List<Lord> lords) {
         this.lords = lords;
-        return this;
-    }
-
-    @Override
-    public VotingAsKing relationships(Relationships relationships) {
-        this.relationships = relationships;
         return this;
     }
 
@@ -47,6 +41,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     private VotingResult realAlternative(List<Lord> kingAlternative) {
+        condorcetVote = createCondorcetVote();
         Set<Lord> currentWinners = currentWinners();
         var votingResult = new VotingResult()
                 .lordsVoting(lordsVoting);
@@ -85,7 +80,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
                 newAlternative.add(0, kingFavorite);
 
                 var otherWinners = new HashSet<>(currentWinners);
-                currentWinners.remove(kingFavorite);
+                otherWinners.remove(kingFavorite);
                 newAlternative.removeAll(otherWinners);
                 newAlternative.addAll(otherWinners);
 
@@ -224,20 +219,67 @@ public class MinimalDecliningVoting implements VotingAsKing {
                 .winningType(WinningType.BY_KING_VOTING);
     }
 
+    private CondorcetVote<Lord> createCondorcetVote() {
+        CondorcetVote.Builder<Lord> builder = CondorcetVote.Builder.getInstance();
+        Lord[][] votes = createVotes();
+        return builder.votes(votes)
+                .build();
+    }
+
+    private Lord[][] createVotes() {
+        return lords.stream()
+                .map(lordsVoting::lord)
+                .map(LordsVoting.HasVoting::voting)
+                .map(list -> list.toArray(Lord[]::new))
+                .toArray(Lord[][]::new);
+    }
+
     private DirectedGraph<Lord> dependencyGraph(List<Lord> potentialWinners) {
-        return null;
+        DirectedGraph.Builder<Lord> builder = DirectedGraph.Builder.getInstance();
+        potentialWinners.forEach(potentialWinner -> {
+            List<Lord> morePreferencedLords = condorcetVote.filterByPreference(i -> i <= 0)
+                    .forVoter(potentialWinner);
+            morePreferencedLords.forEach(lord -> {
+                builder.edge(lord, potentialWinner);
+            });
+        });
+
+        return builder.build();
     }
 
     private List<Lord> lordsThatHasMinDiffPreferenceWithAll(int diffPreference) {
-        return null;
+        return lords.stream()
+                .map(lord -> condorcetVote.filterByPreference(i -> i >= diffPreference)
+                        .forVoter(lord)
+                )
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     private Lord bestBetweenThem(List<Lord> kingAlternative, Set<Lord> winners) {
-        return null;
+        var indexMap = new HashMap<Lord, Integer>();
+        int i = 0;
+        for (Lord lord: kingAlternative) {
+            indexMap.put(lord, i);
+            i++;
+        }
+
+        return winners.stream()
+                .max(Comparator.comparingInt(indexMap::get))
+                .orElseThrow();
     }
 
     private Map<Lord, List<Lord>> lordsThatHasDiffPreference(Collection<Lord> lords, int diffPreference) {
-        return null;
+        var diffPreferenceMap = new HashMap<Lord, List<Lord>>();
+        lords.forEach(lord -> {
+            List<Lord> diffPreferenceLords = condorcetVote.filterByPreference(i -> i == diffPreference)
+                    .forVoter(lord);
+            diffPreferenceLords.forEach(diffPreferenceLord -> {
+                diffPreferenceMap.computeIfAbsent(diffPreferenceLord, l -> new ArrayList<>())
+                        .add(lord);
+            });
+        });
+        return diffPreferenceMap;
     }
 
     private boolean isEvenSituation() {
@@ -246,7 +288,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     private Set<Lord> currentWinners() {
-        return null;
+        return Set.copyOf(condorcetVote.winners());
     }
 
     private List<Lord> bestAlternativeForKing() {

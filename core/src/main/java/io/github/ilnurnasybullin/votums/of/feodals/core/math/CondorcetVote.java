@@ -12,6 +12,13 @@ public interface CondorcetVote<T> {
 
     List<T> winners();
     int preference(T voter1, T voter2);
+
+    /**
+     * фильтрация избирателя {@link ForVoter#forVoter(Object)} по предпочтению в сравнении с остальными лордами:
+     * > 0 - более предпочтительный
+     * = 0 - равно предпочтительный
+     * < 0 - менее предпочтительный
+     */
     ForVoter<T> filterByPreference(IntPredicate filter);
 
     interface Builder<T> {
