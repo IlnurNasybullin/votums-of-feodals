@@ -1,9 +1,9 @@
 package io.github.ilnurnasybullin.votums.of.feodals.core.voting;
 
 import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
-import io.github.ilnurnasybullin.votums.of.feodals.core.lord.DeltaRelationships;
-import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Voter;
-import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Status;
+import io.github.ilnurnasybullin.votums.of.feodals.core.voter.DeltaRelationships;
+import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Voter;
+import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Status;
 import io.github.ilnurnasybullin.votums.of.feodals.core.math.CondorcetVote;
 import io.github.ilnurnasybullin.votums.of.feodals.core.math.DirectedGraph;
 

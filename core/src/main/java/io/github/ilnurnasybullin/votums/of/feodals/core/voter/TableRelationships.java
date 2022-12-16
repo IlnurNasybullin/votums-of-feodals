@@ -1,4 +1,4 @@
-package io.github.ilnurnasybullin.votums.of.feodals.core.lord;
+package io.github.ilnurnasybullin.votums.of.feodals.core.voter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
