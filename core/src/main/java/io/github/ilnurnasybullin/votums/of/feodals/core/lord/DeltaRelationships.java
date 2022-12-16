@@ -1,15 +1,17 @@
 package io.github.ilnurnasybullin.votums.of.feodals.core.lord;
 
+import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
+
 public interface DeltaRelationships {
 
-    IfLord relationWith(Lord lord);
+    IfLord relationWith(Voter voter);
 
     interface IfLord {
-        GetFief ifLord(Lord lord);
+        GetFief ifLord(Voter voter);
     }
 
     interface GetFief {
-        int getFief();
+        int getFief(Fief fief);
     }
 
 }

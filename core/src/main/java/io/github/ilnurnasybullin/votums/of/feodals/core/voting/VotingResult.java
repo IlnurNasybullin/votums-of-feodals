@@ -1,32 +1,32 @@
 package io.github.ilnurnasybullin.votums.of.feodals.core.voting;
 
-import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Lord;
+import io.github.ilnurnasybullin.votums.of.feodals.core.lord.Voter;
 
 import java.util.List;
 
 public class VotingResult {
 
-    private LordsVoting lordsVoting;
-    private List<Lord> kingVoting;
+    private Voting voting;
+    private List<Voter> kingVoting;
     private KingChoice kingChoice;
-    private Lord winner;
+    private Voter winner;
     private WinningType winningType;
 
-    public VotingResult lordsVoting(LordsVoting lordsVoting) {
-        this.lordsVoting = lordsVoting;
+    public VotingResult lordsVoting(Voting voting) {
+        this.voting = voting;
         return this;
     }
 
-    public LordsVoting lordsVoting() {
-        return lordsVoting;
+    public Voting lordsVoting() {
+        return voting;
     }
 
-    public VotingResult kingVoting(List<Lord> kingVoting) {
+    public VotingResult kingVoting(List<Voter> kingVoting) {
         this.kingVoting = List.copyOf(kingVoting);
         return this;
     }
 
-    public List<Lord> kingVoting() {
+    public List<Voter> kingVoting() {
         return kingVoting;
     }
 
@@ -39,12 +39,12 @@ public class VotingResult {
         return kingChoice;
     }
 
-    public VotingResult winner(Lord winner) {
+    public VotingResult winner(Voter winner) {
         this.winner = winner;
         return this;
     }
 
-    public Lord winner() {
+    public Voter winner() {
         return winner;
     }
 

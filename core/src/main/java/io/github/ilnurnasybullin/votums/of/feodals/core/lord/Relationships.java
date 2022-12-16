@@ -1,5 +1,5 @@
 package io.github.ilnurnasybullin.votums.of.feodals.core.lord;
 
 public interface Relationships {
-    int relation(Lord l1, Lord l2);
+    int relation(Voter l1, Voter l2);
 }
