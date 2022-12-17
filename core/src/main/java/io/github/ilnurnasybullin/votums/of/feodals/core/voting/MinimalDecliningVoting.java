@@ -228,7 +228,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     private CondorcetVote<Voter> createCondorcetVote() {
-        CondorcetVote.Builder<Voter> builder = CondorcetVote.Builder.getInstance();
+        CondorcetVote.Votes<Voter> builder = CondorcetVote.Votes.getInstance();
         Voter[][] votes = createVotes();
         return builder.votes(votes)
                 .build();

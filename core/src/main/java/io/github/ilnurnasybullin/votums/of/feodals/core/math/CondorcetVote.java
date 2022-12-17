@@ -21,18 +21,19 @@ public interface CondorcetVote<T> {
      */
     ForVoter<T> filterByPreference(IntPredicate filter);
 
-    interface Builder<T> {
+    interface Votes<T> {
         Builder<T> votes(T[][] votes);
-        CondorcetVote<T> build();
-
-        static <T> Builder<T> getInstance() {
+        static <T> Votes<T> getInstance() {
             @SuppressWarnings("unchecked")
-            var builder = (Builder<T>) ServiceLoader.load(Builder.class)
+            var builder = (Votes<T>) ServiceLoader.load(Votes.class)
                     .findFirst()
                     .orElseThrow();
             return builder;
         }
+    }
 
+    interface Builder<T> {
+        CondorcetVote<T> build();
     }
 
 }

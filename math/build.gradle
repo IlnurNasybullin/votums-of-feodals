@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':core')
+    // https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core
+    implementation 'org.jgrapht:jgrapht-core:1.5.1'
+}
