@@ -8,6 +8,7 @@ public interface CondorcetVote<T> {
 
     interface ForVoter<T> {
         List<T> forVoter(T voter);
+        List<T> forAll();
     }
 
     List<T> winners();

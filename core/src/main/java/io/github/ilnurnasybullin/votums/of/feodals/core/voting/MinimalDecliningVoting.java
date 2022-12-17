@@ -172,6 +172,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
         List<Voter> potentialWinners = lordsThatHasMinDiffPreferenceWithAll(-1);
         potentialWinners.removeAll(currentWinners);
 
+        System.out.printf("POTENTIAL WINNERS is %s%n", potentialWinners);
         // если таких лордов нет - то королю лучше оставить свою альтернативу так, как есть. Если текущего победителя нет -
         // то победителем будет фаворит короля - иначе победителем будет текущий лорд-победитель
         if (potentialWinners.isEmpty()) {
@@ -294,12 +295,8 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     private List<Voter> lordsThatHasMinDiffPreferenceWithAll(int diffPreference) {
-        return voters.stream()
-                .map(lord -> condorcetVote.filterByPreference(i -> i >= diffPreference)
-                        .forVoter(lord)
-                )
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+        return condorcetVote.filterByPreference(i -> i >= diffPreference)
+                .forAll();
     }
 
     private Map<Voter, List<Voter>> lordsThatHasDiffPreference(Collection<Voter> voters, int diffPreference) {

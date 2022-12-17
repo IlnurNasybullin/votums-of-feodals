@@ -5,6 +5,7 @@ import io.github.ilnurnasybullin.votums.of.feodals.core.math.CondorcetVote;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;
+import java.util.function.Predicate;
 
 public class CondorcetVoteImpl<T> implements CondorcetVote<T>, CondorcetVote.ForVoter<T> {
 
@@ -60,6 +61,22 @@ public class CondorcetVoteImpl<T> implements CondorcetVote<T>, CondorcetVote.For
                 .mapToObj(indexMap::getK1)
                 .flatMap(Optional::stream)
                 .toList();
+    }
+
+    @Override
+    public List<T> forAll() {
+        Predicate<int[]> filter = array -> Arrays.stream(array)
+                .allMatch(this.filter);
+
+        var filtered = new ArrayList<T>();
+        for (int i = 0; i < preferences.length; i++) {
+            if (filter.test(preferences[i])) {
+                T voter = indexMap.getK1(i).orElseThrow();
+                filtered.add(voter);
+            }
+        }
+
+        return filtered;
     }
 
     public static class Builder<T> implements CondorcetVote.Builder<T>, Votes<T> {
