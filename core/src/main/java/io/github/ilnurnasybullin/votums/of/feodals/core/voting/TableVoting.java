@@ -26,7 +26,7 @@ public class TableVoting implements Voting {
         return copy;
     }
 
-    public static Builder builder() {
+    public static VoterAndBuild builder() {
         return new Builder();
     }
 

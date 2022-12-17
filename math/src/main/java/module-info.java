@@ -7,6 +7,8 @@ module io.github.ilnurnasybullin.votums.of.feodals.math {
     requires io.github.ilnurnasybullin.votums.of.feodals.core;
     requires org.jgrapht.core;
 
+    exports io.github.ilnurnasybullin.votums.of.feodals.math;
+
     provides DirectedGraph.Builder with DirectedGraphWrapper.Builder;
     provides CondorcetVote.Votes with CondorcetVoteImpl.Builder;
 }

@@ -49,6 +49,8 @@ public class DirectedGraphWrapper<T> implements io.github.ilnurnasybullin.votums
 
         @Override
         public DirectedGraph.Builder<T> edge(T source, T target) {
+            directedGraph.addVertex(source);
+            directedGraph.addVertex(target);
             directedGraph.addEdge(source, target);
             return this;
         }

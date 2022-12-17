@@ -1,0 +1,8 @@
+dependencies {
+    testImplementation project(':math')
+}
+
+task testJar(type: Jar) {
+    from sourceSets.test.output
+    classifier 'tests'
+}

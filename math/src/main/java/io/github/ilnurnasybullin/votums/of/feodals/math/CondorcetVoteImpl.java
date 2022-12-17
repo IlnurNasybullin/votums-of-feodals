@@ -58,7 +58,7 @@ public class CondorcetVoteImpl<T> implements CondorcetVote<T>, CondorcetVote.For
         return Arrays.stream(preferences[i])
                 .filter(filter)
                 .mapToObj(indexMap::getK1)
-                .map(Optional::orElseThrow)
+                .flatMap(Optional::stream)
                 .toList();
     }
 

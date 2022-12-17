@@ -1,9 +1,9 @@
 package io.github.ilnurnasybullin.votums.of.feodals.core.voter;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class TableRelationships implements Relationships {
 
@@ -26,7 +26,7 @@ public class TableRelationships implements Relationships {
         return relationships[i][j];
     }
 
-    public static Builder builder() {
+    public static VoterAndBuild builder() {
         return new Builder();
     }
 
@@ -43,7 +43,7 @@ public class TableRelationships implements Relationships {
         VoterAndBuild hasRelationship(int relationship);
     }
 
-    private static class Builder implements VoterAndBuild, WithVoter, HasRelationship {
+    public static class Builder implements VoterAndBuild, WithVoter, HasRelationship {
 
         private final Map<Voter, Map<Voter, Integer>> relationships;
         private Voter voter;
@@ -96,10 +96,16 @@ public class TableRelationships implements Relationships {
         }
 
         private Map<Voter, Integer> createVoters() {
+            var indexedVoters = new HashMap<Voter, Integer>();
             var i = new AtomicInteger(0);
-            return relationships.keySet()
-                    .stream()
-                    .collect(Collectors.toUnmodifiableMap(Function.identity(), voter -> i.getAndIncrement()));
+            relationships.forEach((voter1, voterAndRelation) -> {
+                indexedVoters.computeIfAbsent(voter1, key -> i.getAndIncrement());
+                voterAndRelation.keySet().forEach(voter2 -> {
+                    indexedVoters.computeIfAbsent(voter2, key -> i.getAndIncrement());
+                });
+            });
+
+            return indexedVoters;
         }
     }
 

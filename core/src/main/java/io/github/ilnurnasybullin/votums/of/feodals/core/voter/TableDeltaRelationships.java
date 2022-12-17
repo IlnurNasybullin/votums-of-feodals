@@ -4,15 +4,15 @@ import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
 
 public class TableDeltaRelationships implements DeltaRelationships, DeltaRelationships.RelationWith, DeltaRelationships.IfLord, DeltaRelationships.GetFief {
 
-    private final TableRelationships tableRelationships;
+    private final Relationships relationships;
     private Voter relationWith;
     private Voter winnner;
     private Voter voter;
 
     private final static int DEFAULT_DELTA_RELATIONSHIP_FOR_WINNING = 10;
 
-    private TableDeltaRelationships(TableRelationships tableRelationships) {
-        this.tableRelationships = tableRelationships;
+    private TableDeltaRelationships(Relationships relationships) {
+        this.relationships = relationships;
     }
 
     @Override
@@ -36,7 +36,7 @@ public class TableDeltaRelationships implements DeltaRelationships, DeltaRelatio
     @Override
     public int getFief(Fief fief) {
         int delta = delta(fief);
-        int currentRelation = tableRelationships.relation(voter, relationWith);
+        int currentRelation = relationships.relation(voter, relationWith);
         if (currentRelation + delta > Relationships.MAX_RELATION) {
             return Relationships.MAX_RELATION - currentRelation;
         }
@@ -53,10 +53,10 @@ public class TableDeltaRelationships implements DeltaRelationships, DeltaRelatio
             return Math.max(fief.value(), DEFAULT_DELTA_RELATIONSHIP_FOR_WINNING);
         }
 
-        return tableRelationships.relation(relationWith, winnner) / 10;
+        return relationships.relation(relationWith, winnner) / 10;
     }
 
-    public static DeltaRelationships of(TableRelationships tableRelationships) {
-        return new TableDeltaRelationships(tableRelationships);
+    public static DeltaRelationships of(Relationships relationships) {
+        return new TableDeltaRelationships(relationships);
     }
 }
