@@ -22,7 +22,8 @@ public class MinimalDecliningVotingTest {
             "_test_data_3_1",
             "_test_data_3_2",
             "_test_data_3_3",
-            "_test_data_4_1"
+            "_test_data_4_1",
+            "_test_data_4_2"
     })
     public void testVoting(List<Voter> voters, Voting voting, Relationships relationships,
                            DeltaRelationships deltaRelationships, Fief fief, ExpectedResult expectedResult) {
@@ -283,6 +284,75 @@ public class MinimalDecliningVotingTest {
                 .winner(voter -> voter == lord1)
                 .winningType(WinningType.FAIR)
                 .kingVoting(kingVoting -> kingVoting.get(0) == lord1);
+
+        var voters = List.of(king, lord1, lord2, lord3);
+
+        return Stream.of(Arguments.of(
+                voters, voting, relationships, TableDeltaRelationships.of(relationships),
+                fief, result
+        ));
+    }
+
+    // 4 Lords (with king) - case #2
+    public static Stream<Arguments> _test_data_4_2() {
+        Voter king = new Voter("King", Status.KING);
+        Voter lord1 = new Voter("Lord1", Status.LORD);
+        Voter lord2 = new Voter("Lord2", Status.LORD);
+        Voter lord3 = new Voter("Lord3", Status.LORD);
+
+        Fief fief = new Fief("Any fief", 14);
+
+        int[][] relations = {
+                {0, 74, -77, -20}, // king
+                {74, 0, -26, 93},  // lord1
+                {-77, -26, 0, 2},  // lord2
+                {-20, 93, 2, 0},   // lord3
+        };
+
+        Relationships relationships = TableRelationships.builder()
+                .voter(king).withVoter(lord1).hasRelationship(74)
+                .voter(king).withVoter(lord2).hasRelationship(-77)
+                .voter(king).withVoter(lord3).hasRelationship(-20)
+                .voter(lord1).withVoter(lord2).hasRelationship(-26)
+                .voter(lord1).withVoter(lord3).hasRelationship(93)
+                .voter(lord2).withVoter(lord3).hasRelationship(2)
+                .build();
+
+        // если феод получит король - то delta = 7 - 7 - 2 = -2
+        // если феод получит 1-ый лорд - delta = 14 - 2 + 9 = 21
+        // если феод получит 2-ой лорд - delta = 14 - 2 + 0 = 12
+        // если феод получит 3-ий лорд - delta = 14 + 9 + 0 = 23
+
+        // вывод - королю выгодно отдать владение 3-ьему лорду
+
+        int[][] votes = {
+                {1, 3, 0, 2},
+                {3, 2, 0, 1},
+                {3, 2, 1, 0},
+        };
+
+        Voting voting = TableVoting.builder()
+                .anyVoter().hasVoting(List.of(lord1, lord3, king, lord2))
+                .anyVoter().hasVoting(List.of(lord3, lord2, king, lord1))
+                .anyVoter().hasVoting(List.of(lord3, lord2, lord1, king))
+                .build();
+        /*
+            Таблица предпочтений:
+               0   1   2   3
+            0  0  -1  -1  -3
+            1  1   0  -1  -1
+            2  1   1   0  -3
+            3  3   1   3   0
+
+            Один победитель - 3-ий лорд
+            Короля устраивает этот вариант
+         */
+
+        ExpectedResult result = new ExpectedResult()
+                .kingChoice(KingChoice.BEST_FOR_KING)
+                .winner(voter -> voter == lord3)
+                .winningType(WinningType.FAIR)
+                .kingVoting(kingVoting -> kingVoting.get(0) == lord3);
 
         var voters = List.of(king, lord1, lord2, lord3);
 
