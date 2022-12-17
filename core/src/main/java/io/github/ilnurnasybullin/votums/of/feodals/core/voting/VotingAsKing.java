@@ -2,11 +2,14 @@ package io.github.ilnurnasybullin.votums.of.feodals.core.voting;
 
 import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
 import io.github.ilnurnasybullin.votums.of.feodals.core.voter.DeltaRelationships;
+import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Relationships;
 import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Voter;
 
 import java.util.List;
 
 public interface VotingAsKing {
+
+    VotingAsKing relationships(Relationships relationships);
 
     VotingAsKing fief(Fief fief);
 

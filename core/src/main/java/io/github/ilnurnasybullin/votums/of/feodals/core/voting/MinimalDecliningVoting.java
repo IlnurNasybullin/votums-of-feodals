@@ -2,6 +2,7 @@ package io.github.ilnurnasybullin.votums.of.feodals.core.voting;
 
 import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
 import io.github.ilnurnasybullin.votums.of.feodals.core.voter.DeltaRelationships;
+import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Relationships;
 import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Voter;
 import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Status;
 import io.github.ilnurnasybullin.votums.of.feodals.core.math.CondorcetVote;
@@ -14,9 +15,17 @@ public class MinimalDecliningVoting implements VotingAsKing {
 
     private List<Voter> voters;
     private DeltaRelationships deltaRelationships;
+    private Relationships relationships;
     private Voting lordsVoting;
     private CondorcetVote<Voter> condorcetVote;
     private Fief fief;
+    private Voter king;
+
+    @Override
+    public VotingAsKing relationships(Relationships relationships) {
+        this.relationships = relationships;
+        return this;
+    }
 
     @Override
     public VotingAsKing fief(Fief fief) {
@@ -27,6 +36,10 @@ public class MinimalDecliningVoting implements VotingAsKing {
     @Override
     public VotingAsKing voters(List<Voter> voters) {
         this.voters = voters;
+        king = voters.stream()
+                .filter(voter -> voter.status() == Status.KING)
+                .findAny()
+                .orElseThrow();
         return this;
     }
 
@@ -309,8 +322,9 @@ public class MinimalDecliningVoting implements VotingAsKing {
     private LordDeltaRelationship ifWin(Voter winner) {
         int delta = voters.stream()
                 .filter(lord -> lord.status() != Status.KING)
-                .map(deltaRelationships::relationWith)
-                .mapToInt(ifLord -> ifLord.ifLord(winner).getFief(fief))
+                .map(lord -> deltaRelationships.forVoter(king).relationWith(lord))
+                .map(ifVoter -> ifVoter.ifVoter(winner))
+                .mapToInt(getFief -> getFief.getFief(fief))
                 .sum();
 
         return new LordDeltaRelationship(winner, delta);

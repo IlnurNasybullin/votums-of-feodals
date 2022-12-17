@@ -4,10 +4,14 @@ import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
 
 public interface DeltaRelationships {
 
-    IfLord relationWith(Voter voter);
+    RelationWith forVoter(Voter voter);
+
+    interface RelationWith {
+        IfLord relationWith(Voter voter);
+    }
 
     interface IfLord {
-        GetFief ifLord(Voter voter);
+        GetFief ifVoter(Voter voter);
     }
 
     interface GetFief {
