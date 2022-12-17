@@ -7,8 +7,10 @@ import java.util.stream.IntStream;
 
 public class PrintMatrices {
     public static void main(String[] args) {
-        printRelationshipMatrix(3);
-        printVotesWithoutKing(3);
+        int votersCount = 4;
+
+        printRelationshipMatrix(votersCount);
+        printVotesWithoutKing(votersCount);
         printFief();
     }
 

@@ -19,9 +19,10 @@ public class MinimalDecliningVotingTest {
 
     @ParameterizedTest
     @MethodSource(value = {
-            "_test_data_1",
-            "_test_data_2",
-            "_test_data_3"
+            "_test_data_3_1",
+            "_test_data_3_2",
+            "_test_data_3_3",
+            "_test_data_4_1"
     })
     public void testVoting(List<Voter> voters, Voting voting, Relationships relationships,
                            DeltaRelationships deltaRelationships, Fief fief, ExpectedResult expectedResult) {
@@ -43,7 +44,7 @@ public class MinimalDecliningVotingTest {
     }
 
     // 3 Lords (with king) - case #1
-    public static Stream<Arguments> _test_data_1() {
+    public static Stream<Arguments> _test_data_3_1() {
         Voter king = new Voter("King", Status.KING);
         Voter lord1 = new Voter("Lord1", Status.LORD);
         Voter lord2 = new Voter("Lord2", Status.LORD);
@@ -103,7 +104,7 @@ public class MinimalDecliningVotingTest {
     }
 
     // 3 Lords (with king) - case #2
-    public static Stream<Arguments> _test_data_2() {
+    public static Stream<Arguments> _test_data_3_2() {
         Voter king = new Voter("King", Status.KING);
         Voter lord1 = new Voter("Lord1", Status.LORD);
         Voter lord2 = new Voter("Lord2", Status.LORD);
@@ -163,7 +164,7 @@ public class MinimalDecliningVotingTest {
     }
 
     // 3 Lords (with king) - case #3
-    public static Stream<Arguments> _test_data_3() {
+    public static Stream<Arguments> _test_data_3_3() {
         Voter king = new Voter("King", Status.KING);
         Voter lord1 = new Voter("Lord1", Status.LORD);
         Voter lord2 = new Voter("Lord2", Status.LORD);
@@ -215,6 +216,75 @@ public class MinimalDecliningVotingTest {
                 .kingVoting(kingVoting -> true);
 
         var voters = List.of(king, lord1, lord2);
+
+        return Stream.of(Arguments.of(
+                voters, voting, relationships, TableDeltaRelationships.of(relationships),
+                fief, result
+        ));
+    }
+
+    // 4 Lords (with king) - case #1
+    public static Stream<Arguments> _test_data_4_1() {
+        Voter king = new Voter("King", Status.KING);
+        Voter lord1 = new Voter("Lord1", Status.LORD);
+        Voter lord2 = new Voter("Lord2", Status.LORD);
+        Voter lord3 = new Voter("Lord3", Status.LORD);
+
+        Fief fief = new Fief("Any fief", 8);
+
+        int[][] relations = {
+                {0, 67, -37, -1},  // king
+                {67, 0, 34, 49},   // lord1
+                {-37, 34, 0, -77}, // lord2
+                {-1, 49, -77, 0},  // lord3
+        };
+
+        Relationships relationships = TableRelationships.builder()
+                .voter(king).withVoter(lord1).hasRelationship(67)
+                .voter(king).withVoter(lord2).hasRelationship(-37)
+                .voter(king).withVoter(lord3).hasRelationship(-1)
+                .voter(lord1).withVoter(lord2).hasRelationship(34)
+                .voter(lord1).withVoter(lord3).hasRelationship(49)
+                .voter(lord2).withVoter(lord3).hasRelationship(-77)
+                .build();
+
+        // если феод получит король - то delta = 6 - 3 - 0 = 3
+        // если феод получит 1-ый лорд - delta = 10 + 3 + 4 = 17
+        // если феод получит 2-ой лорд - delta = 10 + 3 - 7 = 6
+        // если феод получит 3-ий лорд - delta = 10 + 4 - 7 = 7
+
+        // вывод - королю выгодно отдать владение 1-ому лорду
+
+        int[][] votes = {
+                {1, 0, 3, 2},
+                {1, 0, 2, 3},
+                {0, 1, 3, 2},
+        };
+
+        Voting voting = TableVoting.builder()
+                .anyVoter().hasVoting(List.of(lord1, king, lord3, lord2))
+                .anyVoter().hasVoting(List.of(lord1, king, lord2, lord3))
+                .anyVoter().hasVoting(List.of(king, lord1, lord3, lord2))
+                .build();
+        /*
+            Таблица предпочтений:
+               0   1   2   3
+            0  0  -1   3   3
+            1  1   0   3   3
+            2 -3  -3   0  -1
+            3 -3  -3   1   0
+
+            Один победитель - 1-ый лорд
+            Короля устраивает этот вариант
+         */
+
+        ExpectedResult result = new ExpectedResult()
+                .kingChoice(KingChoice.BEST_FOR_KING)
+                .winner(voter -> voter == lord1)
+                .winningType(WinningType.FAIR)
+                .kingVoting(kingVoting -> kingVoting.get(0) == lord1);
+
+        var voters = List.of(king, lord1, lord2, lord3);
 
         return Stream.of(Arguments.of(
                 voters, voting, relationships, TableDeltaRelationships.of(relationships),
