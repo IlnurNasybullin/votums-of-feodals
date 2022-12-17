@@ -14,7 +14,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
 
     private List<Voter> voters;
     private DeltaRelationships deltaRelationships;
-    private Voting voting;
+    private Voting lordsVoting;
     private CondorcetVote<Voter> condorcetVote;
     private Fief fief;
 
@@ -25,7 +25,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     @Override
-    public VotingAsKing lords(List<Voter> voters) {
+    public VotingAsKing voters(List<Voter> voters) {
         this.voters = voters;
         return this;
     }
@@ -37,8 +37,8 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     @Override
-    public VotingAsKing lordsVoting(Voting voting) {
-        this.voting = voting;
+    public VotingAsKing lordsVoting(Voting lordsVoting) {
+        this.lordsVoting = lordsVoting;
         return this;
     }
 
@@ -52,7 +52,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
         condorcetVote = createCondorcetVote();
         Set<Voter> currentWinners = currentWinners();
         var votingResult = new VotingResult()
-                .lordsVoting(voting);
+                .lordsVoting(lordsVoting);
 
         Voter kingFavorite = kingAlternative.get(0);
         if (isEvenSituation()) { // чётная ситуация
@@ -235,12 +235,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
     }
 
     private Voter[][] createVotes() {
-        return voters.stream()
-                .filter(lord -> lord.status() == Status.LORD)
-                .map(voting::voter)
-                .map(Voting.HasVoting::hasVoting)
-                .map(list -> list.toArray(Voter[]::new))
-                .toArray(Voter[][]::new);
+        return lordsVoting.votes();
     }
 
     private DirectedGraph<Voter> dependencyGraph(List<Voter> potentialWinners) {

@@ -10,7 +10,7 @@ public interface VotingAsKing {
 
     VotingAsKing fief(Fief fief);
 
-    VotingAsKing lords(List<Voter> voters);
+    VotingAsKing voters(List<Voter> voters);
     VotingAsKing deltaRelationships(DeltaRelationships deltaRelationships);
     VotingAsKing lordsVoting(Voting voting);
 

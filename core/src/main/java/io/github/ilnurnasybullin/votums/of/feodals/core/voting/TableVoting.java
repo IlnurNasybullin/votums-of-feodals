@@ -2,28 +2,28 @@ package io.github.ilnurnasybullin.votums.of.feodals.core.voting;
 
 import io.github.ilnurnasybullin.votums.of.feodals.core.voter.Voter;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class TableVoting implements Voting, Voting.HasVoting {
+public class TableVoting implements Voting {
 
-    private final Map<Voter, List<Voter>> voters;
-    private Voter voter;
+    private final Voter[][] votes;
 
-    private TableVoting(Map<Voter, List<Voter>> voters) {
-        this.voters = voters;
+    private TableVoting(Voter[][] votes) {
+        this.votes = votes;
     }
 
     @Override
-    public Voting.HasVoting voter(Voter voter) {
-        this.voter = voter;
-        return this;
+    public Voter[][] votes() {
+        return copy(votes);
     }
 
-    @Override
-    public List<Voter> hasVoting() {
-        return voters.get(voter);
+    private Voter[][] copy(Voter[][] votes) {
+        var copy = new Voter[votes.length][];
+        for (int i = 0; i < votes.length; i++) {
+            copy[i] = Arrays.copyOf(votes[i], votes[i].length);
+        }
+
+        return copy;
     }
 
     public static Builder builder() {
@@ -31,7 +31,7 @@ public class TableVoting implements Voting, Voting.HasVoting {
     }
 
     public interface VoterAndBuild {
-        HasVoting voter(Voter voter);
+        HasVoting anyVoter();
         Voting build();
     }
 
@@ -41,28 +41,43 @@ public class TableVoting implements Voting, Voting.HasVoting {
 
     public static class Builder implements VoterAndBuild, HasVoting {
 
-        private final Map<Voter, List<Voter>> voters;
-        private Voter voter;
+        private final List<List<Voter>> votes;
+        private Set<Voter> voters;
 
         public Builder() {
-            this.voters = new HashMap<>();
+            this.votes = new ArrayList<>();
         }
 
         @Override
-        public HasVoting voter(Voter voter) {
-            this.voter = voter;
+        public HasVoting anyVoter() {
             return this;
         }
 
         @Override
         public VoterAndBuild hasVoting(List<Voter> voting) {
-            voters.put(voter, List.copyOf(voting));
+            if (voters == null) {
+                voters = Set.copyOf(voting);
+                votes.add(voting);
+                return this;
+            }
+
+            if (voting.size() != voters.size() ||
+                !voters.containsAll(voting)) {
+                throw new IllegalArgumentException(
+                        String.format("Voters %s are not original with any prev voters %s", voting, voters)
+                );
+            }
+
+            votes.add(voting);
             return this;
         }
 
         @Override
         public Voting build() {
-            return new TableVoting(voters);
+            var votes = this.votes.stream()
+                    .map(list -> list.toArray(Voter[]::new))
+                    .toArray(Voter[][]::new);
+            return new TableVoting(votes);
         }
     }
 }
