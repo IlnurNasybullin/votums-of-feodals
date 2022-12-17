@@ -20,7 +20,8 @@ public class MinimalDecliningVotingTest {
     @ParameterizedTest
     @MethodSource(value = {
             "_test_data_1",
-            "_test_data_2"
+            "_test_data_2",
+            "_test_data_3"
     })
     public void testVoting(List<Voter> voters, Voting voting, Relationships relationships,
                            DeltaRelationships deltaRelationships, Fief fief, ExpectedResult expectedResult) {
@@ -150,6 +151,66 @@ public class MinimalDecliningVotingTest {
         ExpectedResult result = new ExpectedResult()
                 .kingChoice(KingChoice.BEST_FOR_KING)
                 .winner(voter -> voter == lord2)
+                .winningType(WinningType.FAIR)
+                .kingVoting(kingVoting -> true);
+
+        var voters = List.of(king, lord1, lord2);
+
+        return Stream.of(Arguments.of(
+                voters, voting, relationships, TableDeltaRelationships.of(relationships),
+                fief, result
+        ));
+    }
+
+    // 3 Lords (with king) - case #3
+    public static Stream<Arguments> _test_data_3() {
+        Voter king = new Voter("King", Status.KING);
+        Voter lord1 = new Voter("Lord1", Status.LORD);
+        Voter lord2 = new Voter("Lord2", Status.LORD);
+
+        Fief fief = new Fief("Any fief", 3);
+
+        int[][] relations = {
+                {0, -94, 94}, // king
+                {-94, 0, 3},  // lord1
+                {94, 3, 0},   // lord2
+        };
+
+        Relationships relationships = TableRelationships.builder()
+                .voter(king).withVoter(lord1).hasRelationship(-94)
+                .voter(king).withVoter(lord2).hasRelationship(94)
+                .voter(lord1).withVoter(lord2).hasRelationship(3)
+                .build();
+
+        // если феод получит король - то delta = -6 + 6 = 0
+        // если феод получит 1-ый лорд - delta = 10 + 0 = 10
+        // если феод получит 2-ой лорд - delta = 10 + 0 = 10
+
+        // вывод - королю выгодно отдать владение 1-ому или 2-ому лорду
+
+        int[][] votes = {
+                {2, 0, 1},
+                {1, 2, 0},
+        };
+
+        Voting voting = TableVoting.builder()
+                .anyVoter().hasVoting(List.of(lord2, king, lord1))
+                .anyVoter().hasVoting(List.of(lord1, lord2, king))
+                .build();
+        /*
+            Таблица предпочтений:
+               0   1   2
+            0  0   0  -2
+            1  0   0   0
+            2  2   0   0
+
+            Два победителя - лорд №1 и лорд №2
+            Короля устраивают оба варианта
+         */
+
+        ExpectedResult result = new ExpectedResult()
+                .kingChoice(KingChoice.BEST_FOR_KING)
+                .winner(voter -> voter == lord2 || voter == lord1)
                 .winningType(WinningType.FAIR)
                 .kingVoting(kingVoting -> true);
 
