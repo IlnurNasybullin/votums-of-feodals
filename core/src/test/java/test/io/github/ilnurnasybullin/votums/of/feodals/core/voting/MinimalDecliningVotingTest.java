@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -26,7 +27,8 @@ public class MinimalDecliningVotingTest {
             "_test_data_4_2",
             "_test_data_4_3",
             "_test_data_5_1",
-            "_test_data_5_2"
+            "_test_data_5_2",
+            "_test_data_5_3"
     })
     public void testVoting(List<Voter> voters, Voting voting, Relationships relationships,
                            DeltaRelationships deltaRelationships, Fief fief, ExpectedResult expectedResult) {
@@ -605,6 +607,94 @@ public class MinimalDecliningVotingTest {
                         VoterOrdering.of()
                                 .voter(lord4).betterThan(lord2).and()
                                 .voter(lord2).betterThan(lord3)
+                                .test(kingVoting) && kingVoting.get(0) == lord1
+                );
+
+        var voters = List.of(king, lord1, lord2, lord3, lord4);
+
+        return Stream.of(Arguments.of(
+                voters, voting, relationships, TableDeltaRelationships.of(relationships),
+                fief, result
+        ));
+    }
+
+    // 5 Lords (with king) - case #3
+    public static Stream<Arguments> _test_data_5_3() {
+        Voter king = new Voter("King", Status.KING);
+        Voter lord1 = new Voter("Lord1", Status.LORD);
+        Voter lord2 = new Voter("Lord2", Status.LORD);
+        Voter lord3 = new Voter("Lord3", Status.LORD);
+        Voter lord4 = new Voter("Lord4", Status.LORD);
+
+        Fief fief = new Fief("Any fief", 14);
+
+        int[][] relations = {
+                {0, 7, 41, 84, -4},    // king
+                {7, 0, -58, -24, 3},   // lord1
+                {41, -58, 0, 45, -65}, // lord2
+                {84, -24, 45, 0, -59}, // lord3
+                {-4, 3, -65, -59, 0},  // lord4
+        };
+
+        Relationships relationships = TableRelationships.builder()
+                .voter(king).withVoter(lord1).hasRelationship(7)
+                .voter(king).withVoter(lord2).hasRelationship(41)
+                .voter(king).withVoter(lord3).hasRelationship(84)
+                .voter(king).withVoter(lord4).hasRelationship(-4)
+                .voter(lord1).withVoter(lord2).hasRelationship(-58)
+                .voter(lord1).withVoter(lord3).hasRelationship(-24)
+                .voter(lord1).withVoter(lord4).hasRelationship(3)
+                .voter(lord2).withVoter(lord3).hasRelationship(45)
+                .voter(lord2).withVoter(lord4).hasRelationship(-65)
+                .voter(lord3).withVoter(lord4).hasRelationship(-59)
+                .build();
+
+        // если феод получит король - то delta = 0 + 4 + 8 - 0 = 12
+        // если феод получит 1-ый лорд - delta = 14 - 5 - 2 + 3 = 10
+        // если феод получит 2-ой лорд - delta = 14 - 5 + 4 - 6 = 7
+        // если феод получит 3-ий лорд - delta = 14 - 2 + 4 - 5 = 11
+        // если феод получит 4-ый лорд - delta = 14 + 0 - 6 - 5 = 3
+
+        // вывод - королю выгодно отдать владение себе
+
+        int[][] votes = {
+                {0, 2, 1, 3, 4},
+                {1, 2, 4, 3, 0},
+                {4, 0, 2, 3, 1},
+                {4, 3, 0, 2, 1},
+        };
+
+        Voting voting = TableVoting.builder()
+                .anyVoter().hasVoting(List.of(king, lord2, lord1, lord3, lord4))
+                .anyVoter().hasVoting(List.of(lord1, lord2, lord4, lord3, king))
+                .anyVoter().hasVoting(List.of(lord4, king, lord2, lord3, lord1))
+                .anyVoter().hasVoting(List.of(lord4, lord3, king, lord2, lord1))
+                .build();
+        /*
+            Таблица предпочтений:
+               0   1   2   3   4
+            0  0   2   2   0  -2
+            1 -2   0  -2   0   0
+            2 -2   2   0   2   0
+            3  0   0  -2   0  -2
+            4  2   0   0   2   0
+
+            Есть лишь один победитель - лорд №4 - это не устраивает короля
+            При этом король никак не может стать явным победителем
+            Однако, королю достаточно иметь такую стратегию:
+            (... -> 1 -> 4 -> ...) | (... -> 2 -> 4 -> ...)
+            и тогда лорд №4 перестанет быть победителем - не будет ни одного победителя, и королю достаточно будет лишь
+            в альтернативе выдвинуть себя
+         */
+
+        ExpectedResult result = new ExpectedResult()
+                .kingChoice(KingChoice.BEST_FOR_KING)
+                .winner(voter -> voter == king)
+                .winningType(WinningType.BY_KING_VOTING)
+                .kingVoting(kingVoting ->
+                        VoterOrdering.of()
+                                .voter(lord1).betterThan(lord4).or()
+                                .voter(lord2).betterThan(lord4)
                                 .test(kingVoting)
                 );
 
@@ -620,26 +710,82 @@ public class MinimalDecliningVotingTest {
         BetterThan voter(Voter voter);
     }
 
-    interface PredicateAnd<T> extends Predicate<T> {
+    private static class Dnf<T> implements Predicate<T> {
+
+        private final List<Predicate<T>> ands;
+
+        private Dnf() {
+            this(List.of());
+        }
+
+        private Dnf(List<Predicate<T>> ands) {
+            this.ands = List.copyOf(ands);
+        }
+
+        private <E> E last(List<E> list) {
+            return list.get(list.size() - 1);
+        }
+
+        private Predicate<T> truePredicate() {
+            return t -> true;
+        }
+
+        @Override
+        public Dnf<T> and(Predicate<? super T> predicate) {
+            Predicate<T> and;
+            if (ands.isEmpty()) {
+                and = truePredicate().and(predicate);
+            } else {
+                and = last(ands).and(predicate);
+            }
+
+            var ands = new ArrayList<>(this.ands);
+            ands.add(and);
+            return new Dnf<>(ands);
+        }
+
+        @Override
+        public Dnf<T> or(Predicate<? super T> predicate) {
+            Predicate<T> and = truePredicate().and(predicate);
+            var ands = new ArrayList<>(this.ands);
+            ands.add(and);
+            return new Dnf<>(ands);
+        }
+
+        @Override
+        public boolean test(T t) {
+            var result = false;
+            for (Predicate<T> and: ands) {
+                result = and.test(t);
+                if (result) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    interface AndOr {
         VoterIn and();
+        VoterIn or();
+        boolean test(List<Voter> voters);
     }
 
     interface BetterThan {
-        PredicateAnd<List<Voter>> betterThan(Voter voter);
+        AndOr betterThan(Voter voter);
     }
 
-    private static class VoterOrdering implements PredicateAnd<List<Voter>>, VoterIn, BetterThan {
+    private static class VoterOrdering implements AndOr, VoterIn, BetterThan, Predicate<List<Voter>> {
 
         private Voter betterVoter;
-        private Voter voter;
-        private final Predicate<List<Voter>> and;
+        private Predicate<List<Voter>> predicate;
+        private Dnf<List<Voter>> dnf;
 
-        private VoterOrdering() {
-            this(list -> true);
-        }
+        private VoterOrdering() {}
 
-        private VoterOrdering(Predicate<List<Voter>> and) {
-            this.and = and;
+        private VoterOrdering(Dnf<List<Voter>> dnf) {
+            this.dnf = dnf;
         }
 
         @Override
@@ -649,25 +795,51 @@ public class MinimalDecliningVotingTest {
         }
 
         @Override
-        public PredicateAnd<List<Voter>> betterThan(Voter voter) {
-            this.voter = voter;
+        public AndOr betterThan(Voter voter) {
+            this.predicate = list -> list.stream()
+                    .filter(v -> v == betterVoter || v == voter)
+                    .findFirst()
+                    .orElseThrow() == betterVoter;
             return this;
         }
 
         @Override
         public boolean test(List<Voter> voting) {
-            var voter = voting.stream()
-                    .filter(v -> v == betterVoter || v == this.voter)
-                    .findFirst()
-                    .orElseThrow();
+            if (dnf == null) {
+                return predicate.test(voting);
+            }
 
-            return voter == betterVoter;
+            return dnf.test(voting);
         }
 
         @Override
         public VoterIn and() {
-            Predicate<List<Voter>> and = this.and.and(this);
-            return new VoterOrdering(and);
+            VoterOrdering and = new VoterOrdering();
+
+            Dnf<List<Voter>> dnf = this.dnf;
+            if (dnf == null) {
+                dnf = new Dnf<List<Voter>>()
+                        .and(predicate);
+            }
+            dnf = dnf.and(and);
+            and.dnf = dnf;
+
+            return and;
+        }
+
+        @Override
+        public VoterIn or() {
+            VoterOrdering or = new VoterOrdering();
+
+            Dnf<List<Voter>> dnf = this.dnf;
+            if (dnf == null) {
+                dnf = new Dnf<List<Voter>>()
+                        .and(predicate);
+            }
+            dnf = dnf.or(or);
+            or.dnf = dnf;
+
+            return or;
         }
 
         public static VoterIn of() {
