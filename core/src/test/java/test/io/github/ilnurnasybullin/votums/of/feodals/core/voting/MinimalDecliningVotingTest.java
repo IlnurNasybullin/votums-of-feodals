@@ -25,7 +25,8 @@ public class MinimalDecliningVotingTest {
             "_test_data_4_1",
             "_test_data_4_2",
             "_test_data_4_3",
-            "_test_data_5_1"
+            "_test_data_5_1",
+            "_test_data_5_2"
     })
     public void testVoting(List<Voter> voters, Voting voting, Relationships relationships,
                            DeltaRelationships deltaRelationships, Fief fief, ExpectedResult expectedResult) {
@@ -515,6 +516,94 @@ public class MinimalDecliningVotingTest {
                 .kingVoting(kingVoting ->
                         VoterOrdering.of()
                                 .voter(lord2).betterThan(lord3).and()
+                                .voter(lord2).betterThan(lord3)
+                                .test(kingVoting)
+                );
+
+        var voters = List.of(king, lord1, lord2, lord3, lord4);
+
+        return Stream.of(Arguments.of(
+                voters, voting, relationships, TableDeltaRelationships.of(relationships),
+                fief, result
+        ));
+    }
+
+    // 5 Lords (with king) - case #2
+    public static Stream<Arguments> _test_data_5_2() {
+        Voter king = new Voter("King", Status.KING);
+        Voter lord1 = new Voter("Lord1", Status.LORD);
+        Voter lord2 = new Voter("Lord2", Status.LORD);
+        Voter lord3 = new Voter("Lord3", Status.LORD);
+        Voter lord4 = new Voter("Lord4", Status.LORD);
+
+        Fief fief = new Fief("Any fief", 5);
+
+        int[][] relations = {
+                {0, -66, 36, 75, 10},  // king
+                {-66, 0, -30, 54, 61}, // lord1
+                {36, -30, 0, 10, -70}, // lord2
+                {75, 54, 10, 0, 2},    // lord3
+                {10, 61, -70, 2, 0},   // lord4
+        };
+
+        Relationships relationships = TableRelationships.builder()
+                .voter(king).withVoter(lord1).hasRelationship(-66)
+                .voter(king).withVoter(lord2).hasRelationship(36)
+                .voter(king).withVoter(lord3).hasRelationship(75)
+                .voter(king).withVoter(lord4).hasRelationship(10)
+                .voter(lord1).withVoter(lord2).hasRelationship(-30)
+                .voter(lord1).withVoter(lord3).hasRelationship(54)
+                .voter(lord1).withVoter(lord4).hasRelationship(61)
+                .voter(lord2).withVoter(lord3).hasRelationship(10)
+                .voter(lord2).withVoter(lord4).hasRelationship(-70)
+                .voter(lord3).withVoter(lord4).hasRelationship(2)
+                .build();
+
+        // если феод получит король - то delta = -6 + 3 + 7 + 1 = 5
+        // если феод получит 1-ый лорд - delta = 10 - 3 + 5 + 6 = 18
+        // если феод получит 2-ой лорд - delta = 10 - 3 + 1 - 7 = 1
+        // если феод получит 3-ий лорд - delta = 10 + 5 + 1 + 0 = 16
+        // если феод получит 4-ый лорд - delta = 10 + 6 - 7 + 0 = 9
+
+        // вывод - королю выгодно отдать владение 1-ому лорду
+
+        int[][] votes = {
+                {1, 3, 4, 2, 0},
+                {4, 2, 0, 3, 1},
+                {3, 0, 2, 4, 1},
+                {2, 3, 1, 0, 4},
+        };
+
+        Voting voting = TableVoting.builder()
+                .anyVoter().hasVoting(List.of(lord1, lord3, lord4, lord2, king))
+                .anyVoter().hasVoting(List.of(lord4, lord2, king, lord3, lord1))
+                .anyVoter().hasVoting(List.of(lord3, king, lord2, lord4, lord1))
+                .anyVoter().hasVoting(List.of(lord2, lord3, lord1, king, lord4))
+                .build();
+        /*
+            Таблица предпочтений:
+               0   1   2   3   4
+            0  0   0  -2  -2   0
+            1  0   0  -2  -2   0
+            2  2   2   0   0   0
+            3  2   2   0   0   2
+            4  0   0   0  -2   0
+
+            Множество победителей - лорды №2 и №3
+            Короля не устраивает такой вариант. С другой стороны, и лорд №1 не может стать единоличным победителем.
+            Надежда короля - на предоставление такой альтернативы, чтобы не было победителей. Для этого необходимо
+            выполнения следующих условий:
+            (... -> 4 -> ... -> 2 -> ... -> 3 -> ...) - в этом случае, множество победителей будет пустым, и решающим
+            голосом будет голос короля
+         */
+
+        ExpectedResult result = new ExpectedResult()
+                .kingChoice(KingChoice.BEST_FOR_KING)
+                .winner(voter -> voter == lord1)
+                .winningType(WinningType.BY_KING_VOTING)
+                .kingVoting(kingVoting ->
+                        VoterOrdering.of()
+                                .voter(lord4).betterThan(lord2).and()
                                 .voter(lord2).betterThan(lord3)
                                 .test(kingVoting)
                 );

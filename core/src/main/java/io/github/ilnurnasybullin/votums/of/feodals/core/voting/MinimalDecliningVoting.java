@@ -95,8 +95,6 @@ public class MinimalDecliningVoting implements VotingAsKing {
                         .winningType(WinningType.BY_KING_VOTING);
             }
 
-            System.out.printf("kingFavorites is %s%n", kingFavorites);
-            System.out.printf("currentWinners is %s%n", currentWinners);
             // множество победителей непусто и фавориты короля входит в это множество
             List<Voter> intersection = intersection(currentWinners, kingFavorites);
             if (!intersection.isEmpty()) {
@@ -109,7 +107,7 @@ public class MinimalDecliningVoting implements VotingAsKing {
 
             // для победителей находится множество лордов, не являющихся победителей, но при этом имеющие хотя бы
             // с одним-лордом победителем равное кол-во предпочтений.
-            Map<Voter, List<Voter>> samePreferencesLords = lordsThatHasDiffPreference(currentWinners, 0);
+            Map<Voter, Set<Voter>> samePreferencesLords = lordsThatHasDiffPreference(currentWinners, 0);
             samePreferencesLords.keySet().removeAll(currentWinners);
 
             // если таких лордов нет - то королю может лишь выбрать наиболее предпочтительную для себя кандидатуру из
@@ -139,9 +137,9 @@ public class MinimalDecliningVoting implements VotingAsKing {
             var newAlternative = new ArrayList<>(alternative);
             newAlternative.removeAll(currentWinners);
 
-            Map.Entry<Voter, List<Voter>> anyLordWithEqualPreferenceOfWinnerLords = samePreferencesLords.entrySet().iterator().next();
+            Map.Entry<Voter, Set<Voter>> anyLordWithEqualPreferenceOfWinnerLords = samePreferencesLords.entrySet().iterator().next();
             Voter anyVoterThatWillBeHigher = anyLordWithEqualPreferenceOfWinnerLords.getKey();
-            Voter winner = anyLordWithEqualPreferenceOfWinnerLords.getValue().get(0);
+            Voter winner = any(anyLordWithEqualPreferenceOfWinnerLords.getValue());
             if (!kingFavorites.contains(anyVoterThatWillBeHigher)) {
                 newAlternative.remove(anyVoterThatWillBeHigher);
                 newAlternative.add(anyVoterThatWillBeHigher);
@@ -172,7 +170,6 @@ public class MinimalDecliningVoting implements VotingAsKing {
         List<Voter> potentialWinners = lordsThatHasMinDiffPreferenceWithAll(-1);
         potentialWinners.removeAll(currentWinners);
 
-        System.out.printf("POTENTIAL WINNERS is %s%n", potentialWinners);
         // если таких лордов нет - то королю лучше оставить свою альтернативу так, как есть. Если текущего победителя нет -
         // то победителем будет фаворит короля - иначе победителем будет текущий лорд-победитель
         if (potentialWinners.isEmpty()) {
@@ -299,13 +296,15 @@ public class MinimalDecliningVoting implements VotingAsKing {
                 .forAll();
     }
 
-    private Map<Voter, List<Voter>> lordsThatHasDiffPreference(Collection<Voter> voters, int diffPreference) {
-        var diffPreferenceMap = new HashMap<Voter, List<Voter>>();
+    private Map<Voter, Set<Voter>> lordsThatHasDiffPreference(Collection<Voter> voters, int diffPreference) {
+        var diffPreferenceMap = new HashMap<Voter, Set<Voter>>();
         voters.forEach(lord -> {
             List<Voter> diffPreferenceVoters = condorcetVote.filterByPreference(i -> i == diffPreference)
                     .forVoter(lord);
-            diffPreferenceVoters.forEach(diffPreferenceLord -> {
-                diffPreferenceMap.computeIfAbsent(diffPreferenceLord, l -> new ArrayList<>())
+            diffPreferenceVoters.stream()
+                    .filter(voter -> voter != lord)
+                    .forEach(diffPreferenceLord -> {
+                diffPreferenceMap.computeIfAbsent(diffPreferenceLord, l -> new HashSet<>())
                         .add(lord);
             });
         });

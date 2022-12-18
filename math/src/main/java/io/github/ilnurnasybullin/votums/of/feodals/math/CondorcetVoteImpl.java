@@ -55,12 +55,17 @@ public class CondorcetVoteImpl<T> implements CondorcetVote<T>, CondorcetVote.For
 
     @Override
     public List<T> forVoter(T voter) {
+        List<T> voters = new ArrayList<>();
+
         int i = indexMap.getK2(voter).orElseThrow();
-        return Arrays.stream(preferences[i])
-                .filter(filter)
-                .mapToObj(indexMap::getK1)
-                .flatMap(Optional::stream)
-                .toList();
+        for (int j = 0; j < preferences[i].length; j++) {
+            if (filter.test(preferences[i][j])) {
+                T diffVoter = indexMap.getK1(j).orElseThrow();
+                voters.add(diffVoter);
+            }
+        }
+
+        return voters;
     }
 
     @Override
