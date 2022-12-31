@@ -6,7 +6,7 @@ public class TableDeltaRelationships implements DeltaRelationships, DeltaRelatio
 
     private final Relationships relationships;
     private Voter relationWith;
-    private Voter winnner;
+    private Voter winner;
     private Voter voter;
 
     private final static int DEFAULT_DELTA_RELATIONSHIP_FOR_WINNING = 10;
@@ -29,7 +29,7 @@ public class TableDeltaRelationships implements DeltaRelationships, DeltaRelatio
 
     @Override
     public GetFief ifVoter(Voter winner) {
-        this.winnner = winner;
+        this.winner = winner;
         return this;
     }
 
@@ -49,11 +49,11 @@ public class TableDeltaRelationships implements DeltaRelationships, DeltaRelatio
     }
 
     private int delta(Fief fief) {
-        if (relationWith == winnner) {
+        if (relationWith == winner) {
             return Math.max(fief.value(), DEFAULT_DELTA_RELATIONSHIP_FOR_WINNING);
         }
 
-        return relationships.relation(relationWith, winnner) / 10;
+        return relationships.relation(relationWith, winner) / 10;
     }
 
     public static DeltaRelationships of(Relationships relationships) {
