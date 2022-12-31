@@ -2,7 +2,7 @@ package io.github.ilnurnasybullin.votums.of.feodals.core.voter;
 
 import io.github.ilnurnasybullin.votums.of.feodals.core.fief.Fief;
 
-public class TableDeltaRelationships implements DeltaRelationships, DeltaRelationships.RelationWith, DeltaRelationships.IfLord, DeltaRelationships.GetFief {
+public class TableDeltaRelationships implements DeltaRelationships, DeltaRelationships.RelationWith, DeltaRelationships.IfVoter, DeltaRelationships.GetFief {
 
     private final Relationships relationships;
     private Voter relationWith;
@@ -22,7 +22,7 @@ public class TableDeltaRelationships implements DeltaRelationships, DeltaRelatio
     }
 
     @Override
-    public IfLord relationWith(Voter voter) {
+    public IfVoter relationWith(Voter voter) {
         this.relationWith = voter;
         return this;
     }

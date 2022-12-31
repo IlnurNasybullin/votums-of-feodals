@@ -7,10 +7,10 @@ public interface DeltaRelationships {
     RelationWith forVoter(Voter voter);
 
     interface RelationWith {
-        IfLord relationWith(Voter voter);
+        IfVoter relationWith(Voter voter);
     }
 
-    interface IfLord {
+    interface IfVoter {
         GetFief ifVoter(Voter voter);
     }
 
